@@ -57,7 +57,7 @@ def decode_apk_with_apktool(apk_path):
     return output_dir
 
 
-def buscar_nas_strings(root):
+def search_in_strings(root):
     api_key = None
     app_id = None
     for string in root.findall("string"):
@@ -71,7 +71,7 @@ def buscar_nas_strings(root):
     return api_key, app_id
 
 
-def procurar_em_arquivos(output_dir):
+def search_in_files(output_dir):
     print("[+] Searching all .xml files for google_api_key and google_app_id...")
     api_key = None
     app_id = None
@@ -83,7 +83,7 @@ def procurar_em_arquivos(output_dir):
                 try:
                     tree = ET.parse(full_path)
                     root = tree.getroot()
-                    k, a = buscar_nas_strings(root)
+                    k, a = search_in_strings(root)
                     if k and not api_key:
                         api_key = k
                     if a and not app_id:
@@ -96,7 +96,7 @@ def procurar_em_arquivos(output_dir):
     return api_key, app_id
 
 
-def procurar_no_manifest(manifest_path):
+def search_in_manifest(manifest_path):
     print(f"[+] Analyzing AndroidManifest.xml: {manifest_path}")
     try:
         tree = ET.parse(manifest_path)
@@ -129,19 +129,19 @@ def extrair_google_vars(apk_path):
         try:
             tree = ET.parse(strings_path)
             root = tree.getroot()
-            api_key, app_id = buscar_nas_strings(root)
+            api_key, app_id = search_in_strings(root)
         except Exception as e:
             print(f"[-] Failed to parse default strings.xml: {e}")
 
     if not api_key or not app_id:
-        k, a = procurar_em_arquivos(output_dir)
+        k, a = search_in_files(output_dir)
         api_key = api_key or k
         app_id = app_id or a
 
     if not app_id:
         manifest_path = os.path.join(output_dir, "AndroidManifest.xml")
         if os.path.exists(manifest_path):
-            app_id_manifest = procurar_no_manifest(manifest_path)
+            app_id_manifest = search_in_manifest(manifest_path)
             if app_id_manifest:
                 app_id = app_id_manifest
 
