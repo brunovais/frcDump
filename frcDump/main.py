@@ -19,6 +19,20 @@ banner = """
         by @brunovais and @phor3nsic
 """
 
+def get_web_config(google_api_key, app_id):
+    url = f"https://firebase.googleapis.com/v1alpha/projects/-/apps/{app_id}/webConfig"
+    headers = {
+        "X-Goog-Api-Key": google_api_key,
+        "Content-Type": "application/json"
+    }
+    req = requests.get(url, headers=headers)
+    if req.status_code == 200:
+        print("Response received...")
+        return req.json()
+    else:
+        print(f"Error in response, status_code {req.status_code}")
+        sys.exit()
+
 def get_remote_config(google_api_key, app_id):
     app_instance_id = "XD"
     project_id = app_id.split(":")[1]
@@ -209,7 +223,12 @@ def main():
             print("[-] No variables found.")
     
     elif args.appid and args.apikey:
-       print(get_remote_config(args.apikey, args.appid))
+        stripped_appid = args.appid.split(":")
+        
+        if stripped_appid[2] == "web":
+            print(get_web_config(args.apikey, args.appid))
+        else:
+            print(get_remote_config(args.apikey, args.appid))
     
     else:
         print("[!] Try to use --help argument...")
