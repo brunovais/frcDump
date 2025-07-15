@@ -4,6 +4,7 @@ import subprocess
 import xml.etree.ElementTree as ET
 import shutil
 import requests
+import argparse
 
 banner = """
                  (    
@@ -39,7 +40,7 @@ def get_remote_config(google_api_key, app_id):
     req = requests.post(url, headers=headers, json=data_json)
 
     if req.status_code == 200:
-        print("response received...")
+        print("Response received...")
         return req.json()
     else:
         print(f"Error in response, status_code {req.status_code}")
@@ -168,40 +169,50 @@ def extract_google_vars(apk_path):
 
 
 def main():
+    
+    parser = argparse.ArgumentParser(description="Firebase RemoteConfig Dump", add_help=True)
+    parser.add_argument("--apk", help="Path of apk file. Ex: /path/of/apk/file.apk")
+    parser.add_argument("-id","--appid", help="Search remote config by appid. Ex: 0:123455776998:android:123c123a1234f1234ff1a1")
+    parser.add_argument("-k", "--apikey", help="Google Api Key. Ex: AIzaxxxxxx")
+    args = parser.parse_args()
+    
     print(banner)
     print("\n\n")
 
-    if shutil.which("apktool") is None:
-        print("[-] 'apktool' was not found on your system.")
-        print("\nInstallation Instructions:")
-        print("1. Download the latest version from: https://bitbucket.org/iBotPeaches/apktool/downloads/")
-        print("2. Rename the file to 'apktool.jar' and place it in a known directory (e.g., /usr/local/bin).")
-        print("3. Create a wrapper script to make it executable from the command line:")
-        print("   - Linux/macOS: Create a file named 'apktool' in /usr/local/bin with the following content:")
-        print("       #!/bin/bash")
-        print("       java -jar /usr/local/bin/apktool.jar \"$@\"")
-        print("     Then run: chmod +x /usr/local/bin/apktool")
-        print("   - Windows: Run via terminal using: java -jar apktool.jar")
-        print("\nAlternative:")
-        print("   - macOS (Homebrew): brew install apktool")
-        print("   - Linux (APT): sudo apt install apktool")
-        print("\nPlease install apktool and try again.\n")
-        sys.exit(1)
+    if args.apk:
+        if shutil.which("apktool") is None:
+            print("[-] 'apktool' was not found on your system.")
+            print("\nInstallation Instructions:")
+            print("1. Download the latest version from: https://bitbucket.org/iBotPeaches/apktool/downloads/")
+            print("2. Rename the file to 'apktool.jar' and place it in a known directory (e.g., /usr/local/bin).")
+            print("3. Create a wrapper script to make it executable from the command line:")
+            print("   - Linux/macOS: Create a file named 'apktool' in /usr/local/bin with the following content:")
+            print("       #!/bin/bash")
+            print("       java -jar /usr/local/bin/apktool.jar \"$@\"")
+            print("     Then run: chmod +x /usr/local/bin/apktool")
+            print("   - Windows: Run via terminal using: java -jar apktool.jar")
+            print("\nAlternative:")
+            print("   - macOS (Homebrew): brew install apktool")
+            print("   - Linux (APT): sudo apt install apktool")
+            print("\nPlease install apktool and try again.\n")
+            sys.exit(1)
 
-    if len(sys.argv) != 2:
-        print(f"Usage: python {sys.argv[0]} /path/to/app.apk")
-        sys.exit(1)
+        apk_path = args.apk
+        result = extract_google_vars(apk_path)
 
-    apk_path = sys.argv[1]
-    result = extract_google_vars(apk_path)
-
-    os.system("cls" if os.name == "nt" else "clear")
-    print("\n=== Firebase RemoteConfig Dumped! ===")
-    if result["google_api_key"] or result["google_app_id"]:
-        print(f"google_api_key: {result['google_api_key']} and google_app_id: {result['google_app_id']}")
-        print(get_remote_config(result["google_api_key"], result["google_app_id"]))
+        os.system("cls" if os.name == "nt" else "clear")
+        print("\n=== Firebase RemoteConfig Dumped! ===")
+        if result["google_api_key"] or result["google_app_id"]:
+            print(f"google_api_key: {result['google_api_key']} and google_app_id: {result['google_app_id']}")
+            print(get_remote_config(result["google_api_key"], result["google_app_id"]))
+        else:
+            print("[-] No variables found.")
+    
+    elif args.appid and args.apikey:
+       print(get_remote_config(args.apikey, args.appid))
+    
     else:
-        print("[-] No variables found.")
+        print("[!] Try to use --help argument...")
 
 
 if __name__ == '__main__':
