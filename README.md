@@ -8,7 +8,7 @@ A powerful tool to extract Google credentials from an Android APK file, and dump
 
 ```bash
 # 1. Clone this repository
-git clone git@github.com:brunovais/Firebase-Remote-Config-Dump.git
+git clone git@github.com:brunovais/frcDump.git
 cd remote-config-dump
 
 # 2. Install Python dependencies
