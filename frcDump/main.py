@@ -5,30 +5,46 @@ import xml.etree.ElementTree as ET
 import shutil
 import requests
 
+banner = """
+                 (    
+  __              )\ )   (      )       
+ / _|            (()/(  ))\    (     `  ) 
+| |_ _ __ ___    ((_))  /((_)   )\  ' /(/( 
+|  _| '__/ __|   _| |(_))(  _((_)) ((_)_\ 
+| | | | | (__  / _` || || || '  \()| '_ \) 
+|_| |_|  \___| \__,_| \_,_||_|_|_| | .__/  
+                                   |_|   
+
+        by @brunovais and @phor3nsic
+"""
+
 def get_remote_config(google_api_key, app_id):
+    app_instance_id = "XD"
+    project_id = app_id.split(":")[1]
+    url = f"https://firebaseremoteconfig.googleapis.com:443/v1/projects/{project_id}/namespaces/firebase:fetch"
 
-	app_instance_id = "XD"
-	project_id = app_id.split(":")[1]
-	url = f"https://firebaseremoteconfig.googleapis.com:443/v1/projects/{project_id}/namespaces/firebase:fetch"
+    headers = {
+        "X-Goog-Api-Key": google_api_key,
+        "Content-Type": "application/json"
+    }
 
-	headers = {
-		"X-Goog-Api-Key": google_api_key, 
-		"Content-Type": "application/json"
-		}
+    stripped_app_id = app_id.split(":")
+    new_app_id = f"0:{project_id}:android:{stripped_app_id[3]}"
 
-	data_json={
-		"appId": app_id, 
-		"appInstanceId": app_instance_id
-		}
+    data_json = {
+        "appId": new_app_id,
+        "appInstanceId": app_instance_id
+    }
 
-	req = requests.post(url, headers=headers, json=data_json)
-	
-	if req.status_code == 200:
-		print("response received...")
-		return req.json()
-	else:
-		print(f"Error in response, status_code {req.status_code}")
-		sys.exit()
+    req = requests.post(url, headers=headers, json=data_json)
+
+    if req.status_code == 200:
+        print("response received...")
+        return req.json()
+    else:
+        print(f"Error in response, status_code {req.status_code}")
+        sys.exit()
+
 
 def decode_apk_with_apktool(apk_path):
     print(f"[+] APK received: {apk_path}")
@@ -115,7 +131,7 @@ def search_in_manifest(manifest_path):
         return None
 
 
-def extrair_google_vars(apk_path):
+def extract_google_vars(apk_path):
     output_dir = decode_apk_with_apktool(apk_path)
     if not output_dir:
         return None
@@ -151,9 +167,10 @@ def extrair_google_vars(apk_path):
     }
 
 
-if __name__ == "__main__":
-    print("Firebase Remote Config Dump\n              by https://github.com/brunovais and https://github.com/phor3nsic\n\n\n\n")
-    
+def main():
+    print(banner)
+    print("\n\n")
+
     if shutil.which("apktool") is None:
         print("[-] 'apktool' was not found on your system.")
         print("\nInstallation Instructions:")
@@ -176,12 +193,16 @@ if __name__ == "__main__":
         sys.exit(1)
 
     apk_path = sys.argv[1]
-    result = extrair_google_vars(apk_path)
+    result = extract_google_vars(apk_path)
 
     os.system("cls" if os.name == "nt" else "clear")
     print("\n=== Firebase RemoteConfig Dumped! ===")
     if result["google_api_key"] or result["google_app_id"]:
-        print(f"google_api_key: {result['google_api_key']} and google_api_key: {result['google_app_id']}")
+        print(f"google_api_key: {result['google_api_key']} and google_app_id: {result['google_app_id']}")
         print(get_remote_config(result["google_api_key"], result["google_app_id"]))
     else:
         print("[-] No variables found.")
+
+
+if __name__ == '__main__':
+    main()

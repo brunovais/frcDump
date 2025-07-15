@@ -1,0 +1,6 @@
+*venv*
+venv/*
+build/*
+*build*
+*frcDump.egg-info*
+frcDump.egg-info/*
