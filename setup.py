@@ -4,7 +4,7 @@ setup(
     name='frcDump',
     version='0.1',
     packages=find_packages(),
-    install_requires=["requests"],  # requirements.txt
+    install_requires=["requests","PyYAML"],  # requirements.txt
     entry_points={
         'console_scripts': [
             'frcDump=frcDump.main:main',

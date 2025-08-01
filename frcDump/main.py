@@ -5,6 +5,10 @@ import xml.etree.ElementTree as ET
 import shutil
 import requests
 import argparse
+import json
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 banner = """
                  (    
@@ -18,6 +22,23 @@ banner = """
 
         by @brunovais and @phor3nsic
 """
+
+def print_readable(data, indent=0):
+    for key, value in data.items():
+        prefix = '  ' * indent + f"- {key}: "
+        if isinstance(value, dict):
+            print(f"{prefix}")
+            print_readable(value, indent + 1)
+        elif isinstance(value, list):
+            print(f"{prefix}[")
+            for item in value:
+                if isinstance(item, dict):
+                    print_readable(item, indent + 2)
+                else:
+                    print("  " * (indent + 2) + f"- {item}")
+            print("  " * indent + "]")
+        else:
+            print(f"{prefix}{value}")
 
 def get_web_config(google_api_key, app_id):
     url = f"https://firebase.googleapis.com/v1alpha/projects/-/apps/{app_id}/webConfig"
@@ -188,10 +209,12 @@ def main():
     parser.add_argument("--apk", help="Path of apk file. Ex: /path/of/apk/file.apk")
     parser.add_argument("-id","--appid", help="Search remote config by appid. Ex: 0:123455776998:android:123c123a1234f1234ff1a1")
     parser.add_argument("-k", "--apikey", help="Google Api Key. Ex: AIzaxxxxxx")
+    parser.add_argument("--silent", action="store_true", help="Silent mode, no output banner.")
     args = parser.parse_args()
     
-    print(banner)
-    print("\n\n")
+    if not(args.silent):
+        print(banner)
+        print("\n\n")
 
     if args.apk:
         if shutil.which("apktool") is None:
@@ -215,10 +238,13 @@ def main():
         result = extract_google_vars(apk_path)
 
         os.system("cls" if os.name == "nt" else "clear")
-        print("\n=== Firebase RemoteConfig Dumped! ===")
+        if not(args.silent):
+            print("\n=== Firebase RemoteConfig Dumped! ===")
         if result["google_api_key"] or result["google_app_id"]:
             print(f"google_api_key: {result['google_api_key']} and google_app_id: {result['google_app_id']}")
-            print(get_remote_config(result["google_api_key"], result["google_app_id"]))
+            data = get_remote_config(result["google_api_key"], result["google_app_id"])
+            print_readable(data)
+            
         else:
             print("[-] No variables found.")
     
@@ -226,9 +252,11 @@ def main():
         stripped_appid = args.appid.split(":")
         
         if stripped_appid[2] == "web":
-            print(get_web_config(args.apikey, args.appid))
+            data = get_web_config(args.apikey, args.appid)
+            print_readable(data)
         else:
-            print(get_remote_config(args.apikey, args.appid))
+            data = get_remote_config(args.apikey, args.appid) 
+            print_readable(data)
     
     else:
         print("[!] Try to use --help argument...")
